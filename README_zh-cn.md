@@ -54,7 +54,7 @@
 >
 >   >   双击`ng-ssh-gui`，如下所示:
 >   >
->   >   ![](/home/tusimple/wl/Project/GitLab_Doc/Doc_Go/FileContent/%E7%A7%AF%E7%B4%AF/%E9%A1%B9%E7%9B%AE%E4%BD%BF%E7%94%A8/wl_ngrok/ng-ssh/record/readme/images/ng-ssh-gui.png)
+>   >   ![](./images/ng-ssh-gui.png)
 >   >
 >   >   同样可以更改登录的用户，密码和服务的端口。点击"Start"按钮启动服务，服务启动成功后界面会消失。登录:`http://localhost:<port>`访问服务。
 >   >
