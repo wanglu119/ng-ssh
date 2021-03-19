@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"path/filepath"
+	"net/http"
 	
 	"github.com/pkg/sftp"
 	"github.com/mholt/archiver"
@@ -30,8 +31,41 @@ func SftpFetchFile(fullPath string, mc *common.Machine) (*sftp.File, os.FileInfo
 	f, err := sftpClient.Open(fullPath)
 	return f, fileInfo, err
 }
+
+func setContentDisposition(w http.ResponseWriter, r *http.Request, fileName string) {
+	if r.URL.Query().Get("inline") == "true" {
+		w.Header().Set("Content-Disposition", "inline")
+	} else {
+		// As per RFC6266 section 4.3
+		w.Header().Set("Content-Disposition", "attachment; filename*=utf-8''"+fileName)
+	}
+}
+
+func SftpFetchFileToResponse(fullPath string, mc *common.Machine,w http.ResponseWriter, r *http.Request) error {
+	sftpClient, err := NewSftpClient(mc)
+	if err != nil {
+		return err
+	}
+	defer sftpClient.Close()
+	
+	fileInfo, err := sftpClient.Stat(fullPath)
+	if err != nil {
+		return  err
+	}
+	if fileInfo.IsDir() {
+		return fmt.Errorf("%s is not a file", fullPath)
+	}
+	f, err := sftpClient.Open(fullPath)
+	if err != nil {
+		return err
+	}
+	setContentDisposition(w, r, fileInfo.Name())
+	http.ServeContent(w, r, fileInfo.Name(), fileInfo.ModTime(), f)
+	return  err
+}
+
 func SftpDownloadLocal(fullPath string, mc *common.Machine) {
-	file, fileInfo, err := SftpFetchFile(fullPath, mc)
+	file, _, err := SftpFetchFile(fullPath, mc)
 	defer file.Close()
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
@@ -43,7 +77,6 @@ func SftpDownloadLocal(fullPath string, mc *common.Machine) {
 	}
 	c.DataFromReader(http.StatusOK, fileInfo.Size(), "application/octet-stream", file, extraHeaders)
 	*/
-	fmt.Println(fileInfo.Name())
 }
 func SftpCat(fullPath string, mc *common.Machine) {
 	file, fileInfo, err := SftpFetchFile(fullPath, mc)
@@ -63,32 +96,28 @@ func SftpCat(fullPath string, mc *common.Machine) {
 	fmt.Println(string(b))
 }
 
-func SftpFetchToArchive(dirPath string, filenames []string, ar archiver.Writer, extension string, mc *common.Machine) (string, error) {
+func SftpFetchToArchive(dirPath string, filenames []string, ar archiver.Writer, extension string, mc *common.Machine) error {
 	sftpClient, err := NewSftpClient(mc)
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer sftpClient.Close()
 	
-	fileInfo,err := sftpClient.Stat(dirPath)
+	_,err = sftpClient.Stat(dirPath)
 	if err != nil {
-		return "", err
+		return err
 	}
 	
-	name := fileInfo.Name()
-	if name == "." || name == "" {
-		name = "archive"
-	}
-	name += extension
+	dirPath = filepath.Dir(filenames[0])
 	
 	for _, fname := range filenames {
 		err := archiveAddFile(ar, fname,dirPath, sftpClient)
 		if err != nil {
-			return "",err
+			return err
 		}
 	}
 	
-	return name, nil
+	return nil
 }
 
 

@@ -13,6 +13,7 @@
     "axios": "^0.20.0",
     "core-js": "^3.6.5",
     "js-base64": "^3.5.2",
+    "lodash.throttle": "^4.1.1",
     "moment": "^2.28.0",
     "vue": "^2.6.11",
     "vue-axios": "^2.1.5",

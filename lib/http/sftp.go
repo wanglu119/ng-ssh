@@ -149,6 +149,45 @@ var sftpRemoveDir = withUser(func(w http.ResponseWriter, r *http.Request, d *dat
 	return 0,nil
 })
 
+var sftpStat = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	param, mc, err := parseSftpParam(r)
+	if err != nil {
+		return http.StatusBadRequest, nil
+	}
+	
+	if param.DirPath == "" {
+		return http.StatusBadRequest, nil
+	}
+	
+	stat, err := sftp.SftpStat(param.DirPath, mc)
+	if err != nil {
+		log.Error(fmt.Sprintf("%v", err))
+		return http.StatusInternalServerError, err
+	}
+	
+	return renderJSON(w, r, stat)
+})
+
+var sftpCopy = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+	param, mc, err := parseSftpParam(r)
+	if err != nil {
+		log.Error(fmt.Sprintf("%v", err))
+		return http.StatusBadRequest, nil
+	}
+	
+	if param.OldFullPath == "" || param.NewFullPath == "" {
+		return http.StatusBadRequest, nil
+	}
+	
+	err = sftp.SftpCopy(param.OldFullPath, param.NewFullPath, mc)
+	if err != nil {
+		log.Error(fmt.Sprintf("%v", err))
+		return http.StatusInternalServerError, err
+	}
+	
+	return 0, nil
+})
+
 
 
 

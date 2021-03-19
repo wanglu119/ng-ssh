@@ -1,85 +1,73 @@
 import Vue from "vue";
 import Vuex from "vuex";
 
+import sftp from "./modules/sftp";
+// import upload from "./modules/upload";
+const uploadlib = require("./modules/upload")
+const upload = uploadlib.default
+
 Vue.use(Vuex);
 
 const state = {
   error: {
     code: 0,
-    msg: '',
+    msg: ""
   },
   user: {},
-  jwt: '',
+  jwt: "",
   subdomain: "",
-  serverUrl:'',
-  sftpSelected:[],
-  tabs: []
-};
-
-const getters = {
-  // sidebar: state => {
-  //   let r = [];
-  //   state.sidebar.forEach(val => {
-  //     if (val.role) {
-  //       if (val.role === state.user.role) {
-  //         r.push(val);
-  //       }
-  //     } else {
-  //       r.push(val);
-  //     }
-  //   });
-  //   return r;
-  // }
+  serverUrl: "",
+  tabs: [],
+  currTabConf: null,
+  sftpReload: false,
 };
 
 const mutations = {
   setError: (state: any, value: any) => {
-      state.error = value
+    state.error = value;
   },
   setJwt: (state: any, value: any) => {
-    state.jwt = value
+    state.jwt = value;
   },
   setUser: (state: any, value: any) => {
-    state.user = value
+    state.user = value;
   },
   setSubdomain: (state: any, value: any) => {
-    state.subdomain = value
+    state.subdomain = value;
   },
   setServerUrl: (state: any, value: any) => {
-    state.serverUrl = value
+    state.serverUrl = value;
   },
   setTab: (state: any, value: any) => {
-    state.tabs.push(value)
-    if(value.type === 'sftp') {
-      state.sftpSelected = []
+    state.tabs.push(value);
+    if (value.type === "sftp") {
+      sftp.state.selected = [];
     }
   },
   removeTab: (state: any, id: any) => {
-    for(const t in state.tabs) {
-      if(state.tabs[t].id === id) {
-        if(state.tabs[t].type === 'sftp') {
-          state.sftpSelected = []
+    for (const t in state.tabs) {
+      if (state.tabs[t].id === id) {
+        if (state.tabs[t].type === "sftp") {
+          sftp.state.selected = [];
         }
-        state.tabs.splice(t,1)
-        break
+        state.tabs.splice(t, 1);
+        break;
       }
     }
   },
-  resetSftpSelected(state: any, sshConfigName: string) {
-    state.sftpSelected = []
+  setCurrTabConf: (state: any, conf: any) => {
+    state.currTabConf = conf;
   },
-  removeSftpSelected(state: any, index: any) {
-    const i = state.sftpSelected.indexOf(index)
-    state.sftpSelected.splice(i,1)
-  },
-  addSftpSelected(state: any, index:any) {
-    state.sftpSelected.push(index)
-  },
-}
-
+  setSftpReload: (state: any, reload: any) => {
+    state.sftpReload = reload
+  }
+};
 
 export default new Vuex.Store({
   state: state,
   mutations: mutations,
-  modules: {}
+  modules: {
+    sftp,
+    upload
+  }
 });

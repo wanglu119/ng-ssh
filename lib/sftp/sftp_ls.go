@@ -23,6 +23,12 @@ type LsMeta struct {
 	DirPath string `json:"dir_path"`
 	FileCount int `json:"file_count"`
 	DirCount int `json:"dir_count"`
+	
+	Name  string    `json:"name"`
+	Size  int64     `json:"size"`
+	Time  time.Time `json:"time"`
+	Mod   string    `json:"mod"`
+	IsDir bool      `json:"is_dir"`
 }
 
 
@@ -42,6 +48,13 @@ func SftpLs(dirPath string, mc *common.Machine) ([]*Ls,*LsMeta, error) {
 		}
 		dirPath = wd
 	}
+	
+	currStat, err := sftpClient.Stat(dirPath)
+	if err != nil {
+		log.Error(fmt.Sprintf("%v", err))
+		return nil,nil,err
+	}
+	
 	files, err := sftpClient.ReadDir(dirPath)
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
@@ -79,10 +92,17 @@ func SftpLs(dirPath string, mc *common.Machine) ([]*Ls,*LsMeta, error) {
 		allFiles = append(allFiles,f)
 	}
 	
+	
 	lsMeta := &LsMeta{
 		DirPath: dirPath,
 		DirCount: len(dirList),
 		FileCount: len(fileList),
+		
+		Name: currStat.Name(),
+		IsDir: currStat.IsDir(),
+		Mod: currStat.Mode().String(),
+		Size: currStat.Size(),
+		Time: currStat.ModTime(),
 	}
 	
 	return allFiles,lsMeta, nil

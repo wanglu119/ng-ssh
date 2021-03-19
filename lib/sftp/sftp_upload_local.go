@@ -6,6 +6,7 @@ import (
 	"path"
 	"io"
 	"os"
+	"net/http"
 	
 	"github.com/pkg/sftp"
 	
@@ -15,14 +16,14 @@ import (
 func SftpUpFileHeader(header *multipart.FileHeader, desDir string, mc *common.Machine) {
 	sftpClient, err := NewSftpClient(mc)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(fmt.Sprintf("%v",err))
 		return
 	}
 	defer sftpClient.Close()
 	
 	err = uploadFileHeader(desDir, sftpClient, header)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(fmt.Sprintf("%v",err))
 		return
 	}
 }
@@ -76,6 +77,38 @@ func SftpUpFile(file *os.File, desDir string, mc *common.Machine) error {
 }
 
 
+// ==========================================================
 
+func SftpUpRequest(desDir string, r *http.Request, w http.ResponseWriter, mc *common.Machine) error {
+	sftpClient, err := NewSftpClient(mc)
+	if err != nil {
+		return err
+	}
+	defer sftpClient.Close()
+	
+	dstFile, err := sftpClient.Create(desDir)
+	if err != nil {
+		return err
+	}
+	defer dstFile.Close()
+	
+	_, err = io.Copy(dstFile, r.Body)
+	if err != nil {
+		sftpClient.Remove(desDir)
+		return err
+	}
+	
+	// Gets the info about the file.
+	info, err := dstFile.Stat()
+	if err != nil {
+		sftpClient.Remove(desDir)
+		return err
+	}
+	
+	etag := fmt.Sprintf(`"%x%x"`, info.ModTime().UnixNano(), info.Size())
+	w.Header().Set("ETag", etag)
+	
+	return nil
+}
 
 

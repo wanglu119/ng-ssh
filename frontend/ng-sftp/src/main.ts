@@ -14,19 +14,27 @@ const authlib = require('@/utils/auth')
 async function start () {
 
   let subdomain  = ''
-  if(process.env.VUE_APP_MODE === 'ng') {
-    const debug = authlib.getQueryString('debug')
-    try{
-      
-      let auth = authlib.getQueryString('auth')
-      console.log('main.js ========>', auth)
-      if(auth) {
-        authlib.parseToken(auth)
-      } else {
-        auth = localStorage.getItem('jwt')
-        authlib.parseToken(auth)
-      }
+  const debug = authlib.getQueryString('debug')
+  let auth = authlib.getQueryString('auth')
 
+  try {
+    if(auth) {
+      authlib.parseToken(auth)
+    } else {
+      auth = localStorage.getItem('jwt')
+      authlib.parseToken(auth)
+    }
+  } catch(err) {
+    console.log('main.ts auth error: ',err)
+    const url = authlib.getLoginUrl()
+    console.log('main.js =======> ', url)
+    if(!debug) {
+      window.location = url
+    }
+  }
+
+  if(process.env.VUE_APP_MODE === 'ng') {
+    try{
       let serverUrl = authlib.getQueryString('serverUrl')
       console.log('main.js ->', serverUrl)
       if(serverUrl) {
@@ -46,7 +54,7 @@ async function start () {
       
       await authlib.login(serverUrl,subdomain)
     } catch(err) {
-      console.log('main.js =======> ',err)
+      console.log('ng mode error: ',err)
       const url = authlib.getLoginUrl()
       console.log('main.js =======> ', url)
       if(!debug) {
@@ -56,18 +64,9 @@ async function start () {
   } else {
     if(process.env.VUE_APP_SERVER_URL === '') {
       axios.defaults.baseURL = window.location.protocol+'//'+window.location.host
+    } else {
+      axios.defaults.baseURL = process.env.VUE_APP_SERVER_URL
     }
-  }
-
-  try{
-    const auth = localStorage.getItem('jwt')
-    console.log('auth:',auth)
-    if(auth) {
-      authlib.parseToken(auth)
-      await authlib.renew()
-    }
-  }catch(err) {
-    console.log('main.js =======> ',err)
   }
 
   store.commit('setSubdomain', subdomain)

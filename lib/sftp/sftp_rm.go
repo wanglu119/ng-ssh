@@ -36,10 +36,11 @@ func rmR(subFullPath string, sftpClient *sftp.Client) error {
 			if err != nil {
 				return err
 			}
-		}
-		err = sftpClient.Remove(path.Join(subFullPath,file.Name()))
-		if err != nil {
-			return err
+		} else {
+			err = sftpClient.Remove(path.Join(subFullPath,file.Name()))
+			if err != nil {
+				return err
+			}
 		}
 	}
 	

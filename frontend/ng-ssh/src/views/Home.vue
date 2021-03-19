@@ -89,7 +89,11 @@
                 </v-col>
               </v-row>
               <v-text-field v-model="username" :rules="[rules.required]" label="*Username" required></v-text-field>
-              <v-text-field v-model="password" :rules="[rules.required]" label="*Password" required></v-text-field>
+              <v-text-field v-model="password"  :rules="[rules.required]" label="*Password" required 
+                :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'" 
+                :type="showPassword ? 'text' : 'password'"
+                @click:append="showPassword = !showPassword"
+                ></v-text-field>
             </v-form>
 
             <small>*indicates required field</small>
@@ -132,8 +136,9 @@ export default {
     ttys: [],
     rules: {
       required: value => !!value || 'Required.',
-      notContainPoint: value => value.indexOf('.')<0 || 'Cannot contain point', 
+      notContainPoint: value => value && value.indexOf('.')<0 || 'Cannot contain point', 
     },
+    showPassword: false,
   }),
   mounted: async function() {
     await this.getTtys()
@@ -179,7 +184,7 @@ export default {
         const tty = {
           name: this.name,
           host: this.host,
-          port: this.port,
+          port: parseInt(this.port),
           username: this.username,
           password: this.password,
         }
@@ -215,7 +220,7 @@ export default {
     },
     openSftp() {
       const debug = getQueryString('debug')
-      let url = process.env.VUE_APP_SFTP_URL+'?subdoamin='+store.state.subdomain+'&serverUrl='+store.state.serverUrl+'&auth='+store.state.jwt
+      let url = process.env.VUE_APP_SFTP_URL+'?subdomain='+store.state.subdomain+'&serverUrl='+store.state.serverUrl+'&auth='+store.state.jwt
       if(debug) {
         url = url+'&debug='+debug
       }

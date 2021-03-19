@@ -31,6 +31,9 @@ func Setup(r *mux.Router) {
 	sftpApi.Handle("/removeFile", monkey(sftpRemoveFile,"")).Methods("OPTIONS", "DELETE")
 	sftpApi.Handle("/removeDir", monkey(sftpRemoveDir,"")).Methods("OPTIONS", "DELETE")
 	sftpApi.PathPrefix("/raw").Handler(monkey(sftpRaw,"/ngssh_api/sftp/raw")).Methods("OPTIONS", "GET")
+	sftpApi.PathPrefix("/resources").Handler(monkey(sftpResourcePostPutHandler, "/ngssh_api/sftp/resources")).Methods("OPTIONS","POST")
+	sftpApi.Handle("/stat", monkey(sftpStat,"")).Methods("OPTIONS", "POST")
+	sftpApi.Handle("/copy", monkey(sftpCopy,"")).Methods("OPTIONS", "POST")
 	
 	authApi := api.PathPrefix("/auth").Subrouter()
 	authApi.Handle("/renew", monkey(renew,"")).Methods("OPTIONS", "GET")

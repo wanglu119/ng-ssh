@@ -55,20 +55,22 @@ async function start () {
   } else {
     if(process.env.VUE_APP_SERVER_URL === '') {
       axios.defaults.baseURL = window.location.protocol+'//'+window.location.host
+    } else {
+      axios.defaults.baseURL = process.env.VUE_APP_SERVER_URL
+    }
+
+    try{
+      const auth = localStorage.getItem('jwt')
+      console.log('auth:',auth)
+      if(auth) {
+        authlib.parseToken(auth)
+        await authlib.renew()
+      }
+    }catch(err) {
+      console.log('main.js =======> ',err)
     }
   }
-
-  try{
-    const auth = localStorage.getItem('jwt')
-    console.log('auth:',auth)
-    if(auth) {
-      authlib.parseToken(auth)
-      await authlib.renew()
-    }
-  }catch(err) {
-    console.log('main.js =======> ',err)
-  }
-
+  
   store.commit('setSubdomain', subdomain)
   store.commit('setServerUrl', axios.defaults.baseURL)
 

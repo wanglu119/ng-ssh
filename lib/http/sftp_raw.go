@@ -43,7 +43,7 @@ func parseQueryMachine(r *http.Request) (*common.Machine, error) {
 	return mc, nil
 }
 
-var sftpRaw = func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
+var sftpRaw = withUser(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 	isDir, err := parseQueryIsDir(r)
 	if err != nil {
 		return http.StatusBadRequest,err
@@ -54,31 +54,19 @@ var sftpRaw = func(w http.ResponseWriter, r *http.Request, d *data) (int, error)
 	}
 	
 	if !isDir {
-		sftpRawFile(w, r, r.URL.Path, mc)
+		fmt.Println(r.URL.Path)
+		return sftpRawFile(w, r, r.URL.Path, mc)
 	}
 	
 	return sftpRawDir(w, r, r.URL.Path, mc)
-}
+})
 
-func setContentDisposition(w http.ResponseWriter, r *http.Request, fileName string) {
-	if r.URL.Query().Get("inline") == "true" {
-		w.Header().Set("Content-Disposition", "inline")
-	} else {
-		// As per RFC6266 section 4.3
-		w.Header().Set("Content-Disposition", "attachment; filename*=utf-8''"+url.PathEscape(fileName))
-	}
-}
 
 func sftpRawFile(w http.ResponseWriter, r *http.Request, fullPath string, mc *common.Machine) (int, error) {
-	file, fileInfo, err := sftp.SftpFetchFile(fullPath, mc)
+	err := sftp.SftpFetchFileToResponse(fullPath, mc, w, r)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	defer file.Close()
-	
-	setContentDisposition(w, r, fileInfo.Name())
-	http.ServeContent(w, r, fileInfo.Name(), fileInfo.ModTime(), file)
-	
 	return 0, nil
 } 
 
@@ -149,6 +137,18 @@ func sftpRawDir(w http.ResponseWriter, r *http.Request, fullPath string, mc *com
 		return http.StatusBadRequest, err
 	}
 	
+	dirPath = filepath.Dir(filenames[0])
+	name := filepath.Base(dirPath)
+	if len(filenames) == 1 {
+		name = filepath.Base(filenames[0])
+	}
+	if name == "" || name == "." {
+		name = "archive"
+	}
+	name += extension
+	
+	w.Header().Set("Content-Disposition", "attachment; filename*=utf-8''"+url.PathEscape(name))
+	
 	err = ar.Create(w)
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
@@ -156,13 +156,11 @@ func sftpRawDir(w http.ResponseWriter, r *http.Request, fullPath string, mc *com
 	}
 	defer ar.Close()
 	
-	name, err := sftp.SftpFetchToArchive(dirPath, filenames, ar, extension, mc)
+	err = sftp.SftpFetchToArchive(dirPath, filenames, ar, extension, mc)
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
 		return http.StatusInternalServerError, err
 	}
-	
-	w.Header().Set("Content-Disposition", "attachment; filename*=utf-8''"+url.PathEscape(name))
 	
 	return 0,nil
 }

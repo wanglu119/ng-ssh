@@ -7,7 +7,10 @@
         <span>ng-</span>
         <span class="font-weight-light">sftp</span>
       </v-toolbar-title>
+      <v-spacer></v-spacer>
+      <site-header />
     </v-app-bar>
+
     <!-- Sidebar -->
     <v-navigation-drawer
       v-model="drawer"
@@ -92,9 +95,11 @@
 // import { mapGetters, mapState, mapMutations } from 'vuex'
 import {procURL} from '@/api/utils'
 import { mapMutations } from 'vuex'
+import SiteHeader from '@/components/layout/SiteHeader'
 
 export default {
   name:"SidebarMenu",
+  components: {SiteHeader,},
   data: () => ({
     drawer: null,
     sidebar: [

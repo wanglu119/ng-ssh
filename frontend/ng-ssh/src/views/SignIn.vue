@@ -38,7 +38,7 @@
 
 <script>
 import { mapMutations } from 'vuex'
-import { getQueryString,parseToken } from '@/utils/auth'
+import { parseToken } from '@/utils/auth'
 import { procURL } from '@/api/utils'
 
 export default {
@@ -61,7 +61,7 @@ export default {
             console.log(mainTunnelInfos)
         },
         login: async function() {
-            const debug = getQueryString('debug')
+            // const debug = getQueryString('debug')
             if (this.$refs.form.validate()) {
                 try {
                     const r = await procURL('/ngssh_api/auth/login',{
